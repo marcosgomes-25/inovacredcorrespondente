@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Processos — Correspondente Imobiliário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EFECE1;
+    --paper-raised:#FBFAF5;
+    --paper-line:#DAD5C2;
+    --ink:#20293D;
+    --ink-soft:#5B6478;
+    --ink-faint:#8B8F7E;
+    --brass:#A2792F;
+    --brass-dark:#6E5220;
+    --brass-bg:#F2E7CE;
+    --green:#3C6E4B;
+    --green-bg:#DFE9DD;
+    --red:#A93B34;
+    --red-bg:#F3DEDA;
+    --blue:#3D6488;
+    --blue-bg:#DEE6EC;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(32,41,61,0.08), 0 1px 1px rgba(32,41,61,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1440px;margin:0 auto;padding:28px 32px 60px;}
+
+  /* header */
+  .masthead{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;margin-bottom:22px;flex-wrap:wrap;gap:16px;
+  }
+  .masthead-title{display:flex;align-items:center;gap:14px;}
+  .seal{
+    width:46px;height:46px;border-radius:50%;
+    border:2px solid var(--brass);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--brass-dark);
+    flex-shrink:0;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0;
+    letter-spacing:-0.2px;
+  }
+  .masthead p{margin:2px 0 0;color:var(--ink-soft);font-size:13px;}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{
+    background:var(--paper-raised);border:1px solid var(--paper-line);
+    border-radius:var(--radius);padding:8px 16px;min-width:118px;
+  }
+  .stat-label{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em;}
+  .stat-value{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;margin-top:2px;}
+
+  /* toolbar */
+  .toolbar{
+    display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;
+  }
+  .toolbar input[type=text], .toolbar select{
+    font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+    border:1px solid var(--paper-line);background:var(--paper-raised);
+    border-radius:8px;padding:9px 12px;color:var(--ink);
+  }
+  .toolbar input[type=text]{width:220px;}
+  .toolbar input[type=text]:focus, .toolbar select:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;
+    border:1px solid var(--ink);background:var(--ink);color:var(--paper-raised);
+    border-radius:8px;padding:9px 16px;cursor:pointer;
+  }
+  .btn:hover{background:var(--ink-soft);}
+  .btn.secondary{background:transparent;color:var(--ink);border:1px solid var(--paper-line);}
+  .btn.secondary:hover{background:var(--paper-raised);}
+  .btn.danger{background:var(--red);border-color:var(--red);}
+  .toolbar .spacer{flex:1;}
+
+  /* board */
+  .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
+  .column{
+    background:rgba(255,255,255,0.35);
+    border:1px solid var(--paper-line);
+    border-radius:12px;min-width:252px;max-width:252px;
+    display:flex;flex-direction:column;max-height:calc(100vh - 250px);
+  }
+  .column.dragover{border-color:var(--brass);background:var(--brass-bg);}
+  .column-head{
+    padding:12px 14px 10px;border-bottom:1px solid var(--paper-line);
+  }
+  .column-head-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .column-title{font-family:'Fraunces',serif;font-weight:500;font-size:14.5px;}
+  .column-count{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);
+    background:var(--paper-raised);border-radius:20px;padding:1px 8px;
+  }
+  .column-sum{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .column-body{padding:10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:60px;}
+  .empty-col{
+    font-size:12px;color:var(--ink-faint);text-align:center;padding:18px 6px;
+    border:1px dashed var(--paper-line);border-radius:8px;
+  }
+
+  /* card */
+  .card{
+    background:var(--paper-raised);border-radius:8px;box-shadow:var(--shadow);
+    padding:11px 12px 10px;cursor:grab;position:relative;
+    border-left:4px solid var(--ink-faint);
+    transition:transform .12s ease;
+  }
+  .card:active{cursor:grabbing;}
+  .card.dragging{opacity:0.4;}
+  .card.prio-alta{border-left-color:var(--red);}
+  .card.prio-media{border-left-color:var(--brass);}
+  .card.prio-baixa{border-left-color:var(--green);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+  .card-name{font-family:'Fraunces',serif;font-weight:500;font-size:14px;line-height:1.25;}
+  .card-actions{display:flex;gap:4px;opacity:0;transition:opacity .1s;}
+  .card:hover .card-actions{opacity:1;}
+  .icon-btn{
+    border:none;background:none;cursor:pointer;color:var(--ink-faint);
+    font-size:13px;padding:2px;line-height:1;
+  }
+  .icon-btn:hover{color:var(--ink);}
+  .card-imovel{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35;}
+  .card-value{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;
+    margin-top:7px;color:var(--ink);
+  }
+  .card-value-label{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;display:block;}
+  .card-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .bank-tag{
+    font-size:10.5px;background:var(--blue-bg);color:var(--blue);
+    padding:2px 8px;border-radius:20px;font-weight:500;
+  }
+  .day-stamp{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    border:1px solid var(--paper-line);border-radius:20px;padding:2px 7px;
+    color:var(--ink-soft);
+  }
+  .day-stamp.warn{color:var(--brass-dark);border-color:var(--brass);background:var(--brass-bg);}
+  .day-stamp.alert{color:var(--red);border-color:var(--red);background:var(--red-bg);}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(32,41,61,0.45);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:40px 16px;overflow-y:auto;z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper-raised);border-radius:14px;max-width:560px;width:100%;
+    padding:26px 28px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.18);
+  }
+  .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 4px;}
+  .modal .modal-sub{font-size:12.5px;color:var(--ink-faint);margin:0 0 18px;}
+  .field-row{display:flex;gap:12px;margin-bottom:12px;}
+  .field{flex:1;display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11.5px;color:var(--ink-soft);font-weight:500;}
+  .field input, .field select, .field textarea{
+    font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;
+    border:1px solid var(--paper-line);border-radius:8px;padding:9px 10px;
+    background:#fff;color:var(--ink);width:100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  .field textarea{resize:vertical;min-height:56px;font-family:'IBM Plex Sans',sans-serif;}
+  .error-msg{font-size:11.5px;color:var(--red);min-height:14px;margin-top:2px;}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
+  .modal-actions-right{display:flex;gap:8px;}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper-raised);font-size:13px;
+    padding:10px 18px;border-radius:8px;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;
+  }
+  .toast.show{opacity:1;}
+
+  @media (max-width:640px){
+    .app{padding:18px 14px 40px;}
+    .stats{width:100%;}
+    .stat{flex:1;min-width:90px;}
+    .field-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="masthead-title">
+      <div class="seal">CI</div>
+      <div>
+        <h1>Painel de Processos</h1>
+        <p>Financiamentos em andamento — correspondente imobiliário</p>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Buscar cliente ou imóvel...">
+    <select id="filterBanco"><option value="">Todos os bancos</option></select>
+    <select id="filterPrioridade">
+      <option value="">Toda prioridade</option>
+      <option value="alta">Alta</option>
+      <option value="media">Média</option>
+      <option value="baixa">Baixa</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn secondary" id="btnReset">Limpar dados</button>
+    <button class="btn" id="btnNovo">+ Novo processo</button>
+  </div>
+
+  <div class="board" id="board"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Novo processo</h2>
+    <p class="modal-sub">Preencha os dados do processo de financiamento.</p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_nome">Cliente</label>
+        <input type="text" id="f_nome" placeholder="Nome completo">
+      </div>
+      <div class="field">
+        <label for="f_telefone">Telefone</label>
+        <input type="text" id="f_telefone" placeholder="(00) 00000-0000">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field" style="flex:2">
+        <label for="f_imovel">Imóvel</label>
+        <input type="text" id="f_imovel" placeholder="Endereço ou descrição resumida">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_valorImovel">Valor do imóvel (R$)</label>
+        <input type="text" inputmode="numeric" id="f_valorImovel" placeholder="450000">
+      </div>
+      <div class="field">
+        <label for="f_valorFinanciado">Valor financiado (R$)</label>
+        <input type="text" inputmode="numeric" id="f_valorFinanciado" placeholder="380000">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_banco">Banco</label>
+        <select id="f_banco">
+          <option>Caixa Econômica</option>
+          <option>Bradesco</option>
+          <option>Itaú</option>
+          <option>Santander</option>
+          <option>Banco do Brasil</option>
+          <option>Inter</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f_prioridade">Prioridade</label>
+        <select id="f_prioridade">
+          <option value="media">Média</option>
+          <option value="alta">Alta</option>
+          <option value="baixa">Baixa</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_responsavel">Responsável</label>
+        <input type="text" id="f_responsavel" placeholder="Quem está tocando o processo">
+      </div>
+      <div class="field">
+        <label for="f_etapa">Etapa</label>
+        <select id="f_etapa"></select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_obs">Observações</label>
+        <textarea id="f_obs" placeholder="Pendências, próximos passos..."></textarea>
+      </div>
+    </div>
+
+    <div class="error-msg" id="formError"></div>
+
+    <div class="modal-actions">
+      <button class="btn danger" id="btnExcluir" style="display:none;">Excluir processo</button>
+      <div class="modal-actions-right">
+        <button class="btn secondary" id="btnCancelar">Cancelar</button>
+        <button class="btn" id="btnSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ETAPAS = [
+  {id:'prospeccao', nome:'Prospecção'},
+  {id:'documentacao', nome:'Documentação'},
+  {id:'analise', nome:'Análise de crédito'},
+  {id:'avaliacao', nome:'Avaliação do imóvel'},
+  {id:'aprovado', nome:'Aprovado'},
+  {id:'cartorio', nome:'Assinatura e cartório'},
+  {id:'concluido', nome:'Concluído'}
+];
+const STORAGE_KEY = 'processos-imobiliarios';
+
+let processos = [];
+let editingId = null;
+let draggingId = null;
+
+const board = document.getElementById('board');
+const statsEl = document.getElementById('stats');
+const overlay = document.getElementById('overlay');
+const toastEl = document.getElementById('toast');
+const searchEl = document.getElementById('search');
+const filterBancoEl = document.getElementById('filterBanco');
+const filterPrioridadeEl = document.getElementById('filterPrioridade');
+
+function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function fmtMoney(n){
+  n = Number(n) || 0;
+  return n.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+}
+
+function daysSince(iso){
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / (1000*60*60*24));
+  return d < 0 ? 0 : d;
+}
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(()=> toastEl.classList.remove('show'), 2200);
+}
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    processos = raw ? JSON.parse(raw) : seedData();
+    if(!raw){ await saveData(); }
+  }catch(e){
+    processos = seedData();
+    try{ await saveData(); }catch(e2){}
+  }
+  render();
+}
+
+async function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(processos));
+  }catch(e){
+    showToast('Não foi possível salvar. Tente novamente.');
+  }
+}
+
+function seedData(){
+  const now = new Date().toISOString();
+  return [
+    {id:uid(), nome:'Marcos Andrade', telefone:'(92) 99123-4501', imovel:'Apto Adrianópolis, 78m²', valorImovel:420000, valorFinanciado:336000, banco:'Caixa Econômica', responsavel:'Você', prioridade:'alta', etapa:'documentacao', observacoes:'Falta comprovante de renda atualizado.', criadoEm:now, etapaDesde:now},
+    {id:uid(), nome:'Fernanda Lima', telefone:'(92) 99234-1122', imovel:'Casa Ponta Negra, 210m²', valorImovel:780000, valorFinanciado:550000, banco:'Bradesco', responsavel:'Você', prioridade:'media', etapa:'analise', observacoes:'Aguardando retorno do banco.', criadoEm:now, etapaDesde:now},
+    {id:uid(), nome:'Ricardo Nakamura', telefone:'(92) 98888-7766', imovel:'Apto Chapada, 62m²', valorImovel:310000, valorFinanciado:260000, banco:'Itaú', responsavel:'Você', prioridade:'baixa', etapa:'aprovado', observacoes:'Aguardando data no cartório.', criadoEm:now, etapaDesde:now}
+  ];
+}
+
+function populateEtapaSelect(){
+  const sel = document.getElementById('f_etapa');
+  sel.innerHTML = ETAPAS.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+}
+
+function populateBancoFilter(){
+  const bancos = [...new Set(processos.map(p=>p.banco))].sort();
+  filterBancoEl.innerHTML = '<option value="">Todos os bancos</option>' +
+    bancos.map(b=>`<option value="${b}">${b}</option>`).join('');
+}
+
+function getFiltered(){
+  const q = searchEl.value.trim().toLowerCase();
+  const banco = filterBancoEl.value;
+  const prio = filterPrioridadeEl.value;
+  return processos.filter(p=>{
+    if(banco && p.banco !== banco) return false;
+    if(prio && p.prioridade !== prio) return false;
+    if(q && !(p.nome.toLowerCase().includes(q) || (p.imovel||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function render(){
+  populateBancoFilter();
+  const filtered = getFiltered();
+  renderStats(filtered);
+  board.innerHTML = '';
+  ETAPAS.forEach(etapa=>{
+    const items = filtered.filter(p=>p.etapa === etapa.id);
+    const sum = items.reduce((s,p)=> s + (Number(p.valorFinanciado)||0), 0);
+
+    const col = document.createElement('div');
+    col.className = 'column';
+    col.dataset.etapa = etapa.id;
+
+    col.innerHTML = `
+      <div class="column-head">
+        <div class="column-head-top">
+          <span class="column-title">${etapa.nome}</span>
+          <span class="column-count">${items.length}</span>
+        </div>
+        <div class="column-sum">${fmtMoney(sum)}</div>
+      </div>
+      <div class="column-body" data-etapa="${etapa.id}"></div>
+    `;
+    const bodyEl = col.querySelector('.column-body');
+
+    if(items.length === 0){
+      bodyEl.innerHTML = '<div class="empty-col">Nenhum processo nesta etapa</div>';
+    } else {
+      items.sort((a,b)=> new Date(b.etapaDesde) - new Date(a.etapaDesde));
+      items.forEach(p => bodyEl.appendChild(renderCard(p)));
+    }
+
+    bodyEl.addEventListener('dragover', e=>{
+      e.preventDefault();
+      col.classList.add('dragover');
+    });
+    bodyEl.addEventListener('dragleave', ()=> col.classList.remove('dragover'));
+    bodyEl.addEventListener('drop', e=>{
+      e.preventDefault();
+      col.classList.remove('dragover');
+      if(!draggingId) return;
+      const proc = processos.find(x=>x.id === draggingId);
+      if(proc && proc.etapa !== etapa.id){
+        proc.etapa = etapa.id;
+        proc.etapaDesde = new Date().toISOString();
+        saveData();
+        render();
+      }
+      draggingId = null;
+    });
+
+    board.appendChild(col);
+  });
+}
+
+function renderCard(p){
+  const card = document.createElement('div');
+  card.className = `card prio-${p.prioridade}`;
+  card.draggable = true;
+  card.dataset.id = p.id;
+
+  const days = daysSince(p.etapaDesde);
+  let stampClass = '';
+  if(days >= 30) stampClass = 'alert';
+  else if(days >= 15) stampClass = 'warn';
+
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-name">${escapeHtml(p.nome)}</div>
+      <div class="card-actions">
+        <button class="icon-btn" data-action="edit" title="Editar">✎</button>
+        <button class="icon-btn" data-action="delete" title="Excluir">✕</button>
+      </div>
+    </div>
+    <div class="card-imovel">${escapeHtml(p.imovel || '')}</div>
+    <div class="card-value">
+      <span class="card-value-label">Financiado</span>
+      ${fmtMoney(p.valorFinanciado)}
+    </div>
+    <div class="card-bottom">
+      <span class="bank-tag">${escapeHtml(p.banco)}</span>
+      <span class="day-stamp ${stampClass}">${days}d</span>
+    </div>
+  `;
+
+  card.addEventListener('dragstart', ()=>{
+    draggingId = p.id;
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
+  card.addEventListener('click', (e)=>{
+    const action = e.target.dataset.action;
+    if(action === 'edit'){ openModal(p.id); }
+    else if(action === 'delete'){ deleteProcesso(p.id); }
+    else { openModal(p.id); }
+  });
+
+  return card;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : str;
+  return d.innerHTML;
+}
+
+function renderStats(filtered){
+  const ativos = filtered.filter(p=>p.etapa !== 'concluido');
+  const concluidos = filtered.filter(p=>p.etapa === 'concluido');
+  const totalFinanciado = ativos.reduce((s,p)=> s + (Number(p.valorFinanciado)||0), 0);
+  const atrasados = ativos.filter(p=> daysSince(p.etapaDesde) >= 15).length;
+
+  statsEl.innerHTML = `
+    <div class="stat"><div class="stat-label">Processos ativos</div><div class="stat-value">${ativos.length}</div></div>
+    <div class="stat"><div class="stat-label">Em financiamento</div><div class="stat-value">${fmtMoney(totalFinanciado)}</div></div>
+    <div class="stat"><div class="stat-label">Parados +15 dias</div><div class="stat-value">${atrasados}</div></div>
+    <div class="stat"><div class="stat-label">Concluídos</div><div class="stat-value">${concluidos.length}</div></div>
+  `;
+}
+
+function openModal(id){
+  editingId = id || null;
+  const p = id ? processos.find(x=>x.id===id) : null;
+  document.getElementById('modalTitle').textContent = p ? 'Editar processo' : 'Novo processo';
+  document.getElementById('f_nome').value = p ? p.nome : '';
+  document.getElementById('f_telefone').value = p ? p.telefone : '';
+  document.getElementById('f_imovel').value = p ? p.imovel : '';
+  document.getElementById('f_valorImovel').value = p ? p.valorImovel : '';
+  document.getElementById('f_valorFinanciado').value = p ? p.valorFinanciado : '';
+  document.getElementById('f_banco').value = p ? p.banco : 'Caixa Econômica';
+  document.getElementById('f_prioridade').value = p ? p.prioridade : 'media';
+  document.getElementById('f_responsavel').value = p ? p.responsavel : '';
+  document.getElementById('f_etapa').value = p ? p.etapa : 'prospeccao';
+  document.getElementById('f_obs').value = p ? p.observacoes : '';
+  document.getElementById('formError').textContent = '';
+  document.getElementById('btnExcluir').style.display = p ? 'inline-block' : 'none';
+  overlay.classList.add('open');
+  document.getElementById('f_nome').focus();
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  editingId = null;
+}
+
+function deleteProcesso(id){
+  const p = processos.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm(`Excluir o processo de ${p.nome}?`)) return;
+  processos = processos.filter(x=>x.id !== id);
+  saveData();
+  render();
+  showToast('Processo excluído.');
+}
+
+document.getElementById('btnNovo').addEventListener('click', ()=> openModal(null));
+document.getElementById('btnCancelar').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+
+document.getElementById('btnExcluir').addEventListener('click', ()=>{
+  if(editingId){ deleteProcesso(editingId); closeModal(); }
+});
+
+document.getElementById('btnSalvar').addEventListener('click', async ()=>{
+  const nome = document.getElementById('f_nome').value.trim();
+  const valorFinanciado = document.getElementById('f_valorFinanciado').value.trim();
+  const errEl = document.getElementById('formError');
+
+  if(!nome){ errEl.textContent = 'Informe o nome do cliente.'; document.getElementById('f_nome').focus(); return; }
+  if(!valorFinanciado || isNaN(Number(valorFinanciado))){ errEl.textContent = 'Informe um valor financiado válido.'; document.getElementById('f_valorFinanciado').focus(); return; }
+  errEl.textContent = '';
+
+  const novaEtapa = document.getElementById('f_etapa').value;
+
+  if(editingId){
+    const p = processos.find(x=>x.id === editingId);
+    const etapaMudou = p.etapa !== novaEtapa;
+    p.nome = nome;
+    p.telefone = document.getElementById('f_telefone').value.trim();
+    p.imovel = document.getElementById('f_imovel').value.trim();
+    p.valorImovel = Number(document.getElementById('f_valorImovel').value) || 0;
+    p.valorFinanciado = Number(valorFinanciado);
+    p.banco = document.getElementById('f_banco').value;
+    p.prioridade = document.getElementById('f_prioridade').value;
+    p.responsavel = document.getElementById('f_responsavel').value.trim();
+    p.etapa = novaEtapa;
+    p.observacoes = document.getElementById('f_obs').value.trim();
+    if(etapaMudou) p.etapaDesde = new Date().toISOString();
+    showToast('Processo atualizado.');
+  } else {
+    const now = new Date().toISOString();
+    processos.push({
+      id: uid(),
+      nome, telefone: document.getElementById('f_telefone').value.trim(),
+      imovel: document.getElementById('f_imovel').value.trim(),
+      valorImovel: Number(document.getElementById('f_valorImovel').value) || 0,
+      valorFinanciado: Number(valorFinanciado),
+      banco: document.getElementById('f_banco').value,
+      responsavel: document.getElementById('f_responsavel').value.trim(),
+      prioridade: document.getElementById('f_prioridade').value,
+      etapa: novaEtapa,
+      observacoes: document.getElementById('f_obs').value.trim(),
+      criadoEm: now, etapaDesde: now
+    });
+    showToast('Processo criado.');
+  }
+
+  await saveData();
+  closeModal();
+  render();
+});
+
+document.getElementById('btnReset').addEventListener('click', async ()=>{
+  if(!confirm('Isso vai apagar todos os processos salvos. Continuar?')) return;
+  processos = [];
+  await saveData();
+  render();
+  showToast('Dados limpos.');
+});
+
+searchEl.addEventListener('input', render);
+filterBancoEl.addEventListener('change', render);
+filterPrioridadeEl.addEventListener('change', render);
+
+populateEtapaSelect();
+loadData();
+</script>
+</body>
+</html>
